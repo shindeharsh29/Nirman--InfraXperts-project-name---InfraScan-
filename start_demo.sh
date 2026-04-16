@@ -4,6 +4,7 @@
 # Usage: chmod +x start_demo.sh && ./start_demo.sh
 
 set -e
+export PATH=$PATH:/opt/homebrew/bin
 
 BACKEND_DIR="$(cd "$(dirname "$0")/backend" && pwd)"
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"

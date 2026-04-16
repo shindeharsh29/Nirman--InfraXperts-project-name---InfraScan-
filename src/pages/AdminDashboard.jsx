@@ -169,7 +169,7 @@ export default function AdminDashboard({ view = 'overview' }) {
               <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ border: '1px solid var(--border)', borderRadius: 8, fontSize: 13 }} />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="#111827" />
+              <Bar dataKey="count" radius={[0, 6, 6, 0]} fill="var(--accent)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard({ view = 'overview' }) {
               <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ border: '1px solid var(--border)', borderRadius: 8, fontSize: 13 }} />
-              <Bar dataKey="count" fill="#111827" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="count" fill="var(--accent)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
