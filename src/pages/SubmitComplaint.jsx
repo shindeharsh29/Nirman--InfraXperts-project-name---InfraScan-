@@ -11,6 +11,7 @@ export default function SubmitComplaint() {
   const [status, setStatus] = useState('idle');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [result, setResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -57,12 +58,19 @@ export default function SubmitComplaint() {
     if (location.lng) formData.append('longitude', location.lng);
     if (location.name) formData.append('location_name', location.name);
     try {
-      const res = await axios.post('http://localhost:8000/api/complaints', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const token = localStorage.getItem('token');
+      const res = await axios.post('http://localhost:8000/api/complaints', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setResult(res.data);
       setStatus('success');
-    } catch {
+    } catch (err) {
+      console.error('Submit error:', err?.response?.status, err?.response?.data, err?.message);
+      const detail = err?.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail : Array.isArray(detail) ? detail.map(d=>d.msg).join(', ') : err?.message || 'Unknown error';
+      setErrorMsg(msg);
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => setStatus('idle'), 5000);
     }
   };
 
@@ -189,7 +197,7 @@ export default function SubmitComplaint() {
         <div className="card mt-4" style={{ marginTop: 16 }}>
           {status === 'error' && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, fontSize: 13, color: '#DC2626' }}>
-              <AlertTriangle size={15} /> Failed to submit. Make sure the backend server is running at port 8000.
+              <AlertTriangle size={15} /> {errorMsg || 'Failed to submit. Make sure the backend server is running at port 8000.'}
             </div>
           )}
           <button type="submit" className="btn btn-dark" style={{ width: '100%', padding: '11px 20px', fontSize: 14 }} disabled={status === 'submitting'}>

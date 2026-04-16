@@ -425,6 +425,21 @@ input, textarea, select { font-family: inherit; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { animation: fadeIn 0.25s ease; }
 
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] {
+  --bg:        #0F1117;
+  --surface:   #1A1D27;
+  --border:    #2D3148;
+  --border-sm: #252838;
+  --text-primary:   #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
+  --accent:       #6366F1;
+  --accent-light: #1E2035;
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

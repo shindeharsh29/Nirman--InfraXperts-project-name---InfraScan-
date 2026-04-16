@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './components/AuthContext';
+import { NotificationProvider, useNotifications } from './components/NotificationContext';
+import NotificationPanel from './components/NotificationPanel';
+import ToastStack from './components/Toast';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SubmitComplaint from './pages/SubmitComplaint';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
+import SettingsPage from './pages/Settings';
 import {
   LayoutDashboard, FileText, Send, Map, BarChart2,
-  Bell, Settings, LogOut, ShieldCheck, AlertCircle, User
+  Bell, Settings, LogOut, ShieldCheck, AlertCircle
 } from 'lucide-react';
 import './index.css';
 
@@ -27,6 +31,7 @@ function Sidebar() {
   const citizenNav = [
     { to: '/dashboard', icon: <LayoutDashboard size={17} />, label: 'My Reports' },
     { to: '/report', icon: <Send size={17} />, label: 'Submit Damage' },
+    { to: '/settings', icon: <Settings size={17} />, label: 'Settings' },
   ];
 
   const navItems = user?.is_admin ? adminNav : citizenNav;
@@ -66,6 +71,9 @@ function Sidebar() {
             <NavLink to="/admin/analytics" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
               <BarChart2 size={17} /><span>Analytics</span>
             </NavLink>
+            <NavLink to="/settings" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <Settings size={17} /><span>Settings</span>
+            </NavLink>
           </>
         )}
       </nav>
@@ -88,19 +96,33 @@ function Sidebar() {
 /* ===== TOPBAR ===== */
 function Topbar({ title }) {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
+  const [panelOpen, setPanelOpen] = useState(false);
   return (
-    <div className="topbar">
-      <div className="topbar-title">{title}</div>
-      <div className="topbar-actions">
-        {user?.is_admin && (
-          <span className="badge" style={{ background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }}>
-            <ShieldCheck size={11} style={{ marginRight: 4 }} /> Admin
-          </span>
-        )}
-        <button className="topbar-icon-btn"><Bell size={16} /></button>
-        <button className="topbar-icon-btn"><Settings size={16} /></button>
+    <>
+      <div className="topbar">
+        <div className="topbar-title">{title}</div>
+        <div className="topbar-actions">
+          {user?.is_admin && (
+            <span className="badge" style={{ background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' }}>
+              <ShieldCheck size={11} style={{ marginRight: 4 }} /> Admin
+            </span>
+          )}
+          <button className="topbar-icon-btn" onClick={() => setPanelOpen(true)} style={{ position: 'relative' }}>
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: -2, right: -2, background: '#EF4444', color: 'white', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <NavLink to="/settings" className="topbar-icon-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Settings size={16} />
+          </NavLink>
+        </div>
       </div>
-    </div>
+      <NotificationPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
+    </>
   );
 }
 
@@ -199,6 +221,14 @@ function AppRoutes() {
           </AppShell>
         </AdminRoute>
       } />
+
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <AppShell title="Settings">
+            <SettingsPage />
+          </AppShell>
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }
@@ -207,7 +237,10 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <NotificationProvider>
+          <AppRoutes />
+          <ToastStack />
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );
