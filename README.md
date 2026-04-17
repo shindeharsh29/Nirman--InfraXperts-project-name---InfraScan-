@@ -53,14 +53,37 @@ InfraScan integrates directly with **APM Planner 2** for aerial verification.
 
 ```
 InfraScan/
-├── backend/
-│   ├── main.py              # FastAPI app + all routes
-│   ├── ai_model.py          # Roboflow inference + scoring
-│   ├── mavlink_bridge.py    # MAVLink drone bridge
-│   └── requirements.txt     # Python dependencies
-├── src/                     # React Frontend
-├── start_demo.sh            # Automated demo launcher
-└── README.md
+├── 📂 backend/                # FastAPI Application Layer
+│   ├── main.py                # core: API Routes (Auth, Reports, Drone)
+│   ├── ai_model.py            # ai: Roboflow Inference + Priority Logic
+│   ├── mavlink_bridge.py      # bridge: MAVLink Telemetry (Port 8001)
+│   ├── models.py              # db: SQLAlchemy Database Models
+│   ├── schemas.py             # validation: Pydantic Data Schemas
+│   ├── database.py            # config: SQLite Connection
+│   ├── infrastructure.db      # data: Local SQLite Database
+│   ├── 📂 uploads/            # storage: Processed Citizen & Drone Images
+│   └── requirements.txt       # deps: Python Backend Dependencies
+│
+├── 📂 src/                    # React Frontend Layer
+│   ├── App.jsx                # root: Navigation & Sidebar logic
+│   ├── index.css              # style: Full Design System & Utilities
+│   ├── 📂 pages/              # views:
+│   │   ├── Auth.jsx           # Unified Sliding Sign-in/Signup
+│   │   ├── Auth.css           # Sliding Panel Animations
+│   │   ├── AdminDashboard.jsx # Admin Command Hub (GIS Map + Analytics)
+│   │   ├── UserDashboard.jsx  # Citizen Report Tracker
+│   │   ├── Home.jsx           # Landing Page
+│   │   └── SubmitComplaint.jsx# Report Submission Wizard
+│   ├── 📂 components/         # shared: Contexts, Modals, and Widgets
+│   └── 📂 assets/             # media: AI-generated Illustrations
+│
+├── 📂 public/                 # Static Assets
+├── start_demo.sh              # EXEC: One-Click Demo Launcher (macOS/Linux)
+├── start_demo.ps1             # EXEC: One-Click Demo Launcher (Windows)
+├── vite.config.js             # config: Frontend Build Settings
+├── package.json               # deps: Node.js/React Dependencies
+└── README.md                  # docs: GitHub Documentation
+
 ```
 
 ---
