@@ -16,8 +16,20 @@ echo "╚═══════════════════════�
 echo ""
 
 # Activate virtualenv
+if [ ! -d "$BACKEND_DIR/venv" ]; then
+    echo "▶ Creating Python virtualenv..."
+    python3 -m venv "$BACKEND_DIR/venv"
+fi
 source "$BACKEND_DIR/venv/bin/activate"
 echo "✅ Python venv activated"
+
+echo "▶ Installing Backend dependencies..."
+cd "$BACKEND_DIR"
+pip install -r requirements.txt > /dev/null
+
+echo "▶ Installing Frontend dependencies..."
+cd "$PROJECT_DIR"
+npm install > /dev/null
 
 # ── Step 1: InfraScan Backend ────────────────────────────────────────────────
 echo ""
@@ -46,7 +58,6 @@ npm run dev &
 FRONTEND_PID=$!
 sleep 3
 echo "✅ Frontend running → http://localhost:5173"
-
 # ── Done ─────────────────────────────────────────────────────────────────────
 echo ""
 echo "╔═══════════════════════════════════════════════════╗"

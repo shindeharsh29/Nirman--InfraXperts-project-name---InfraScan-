@@ -5,15 +5,15 @@ import { NotificationProvider, useNotifications } from './components/Notificatio
 import NotificationPanel from './components/NotificationPanel';
 import ToastStack from './components/Toast';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Auth from './pages/Auth';
 import SubmitComplaint from './pages/SubmitComplaint';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import SettingsPage from './pages/Settings';
+import AreaScan from './pages/AreaScan';
 import {
   LayoutDashboard, FileText, Send, Map, BarChart2,
-  Bell, Settings, LogOut, ShieldCheck, AlertCircle
+  Bell, Settings, LogOut, ShieldCheck, AlertCircle, Scan
 } from 'lucide-react';
 import './index.css';
 
@@ -31,6 +31,7 @@ function Sidebar() {
   const citizenNav = [
     { to: '/dashboard', icon: <LayoutDashboard size={17} />, label: 'My Reports' },
     { to: '/report', icon: <Send size={17} />, label: 'Submit Damage' },
+    { to: '/area-scan', icon: <Scan size={17} />, label: 'Area Scan' },
     { to: '/settings', icon: <Settings size={17} />, label: 'Settings' },
   ];
 
@@ -166,6 +167,7 @@ function AppRoutes() {
     '/admin/analytics': 'Analytics',
     '/dashboard': 'My Reports',
     '/report': 'Submit New Report',
+    '/area-scan': 'Area Scan Simulator',
   };
   const title = TITLES[location.pathname] || 'InfraScan';
 
@@ -174,8 +176,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Auth />} />
+      <Route path="/register" element={<Navigate to="/login?mode=signup" replace />} />
 
       <Route path="/report" element={
         <ProtectedRoute>
@@ -189,6 +191,14 @@ function AppRoutes() {
         <ProtectedRoute>
           <AppShell title={title}>
             <UserDashboard />
+          </AppShell>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/area-scan" element={
+        <ProtectedRoute>
+          <AppShell title={title}>
+            <AreaScan />
           </AppShell>
         </ProtectedRoute>
       } />

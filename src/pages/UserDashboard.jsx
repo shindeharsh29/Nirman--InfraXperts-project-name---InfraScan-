@@ -3,6 +3,16 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthContext';
 import { FileText, Send, Clock, CheckCircle, AlertTriangle, MapPin, ChevronRight, Image } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 const STATUS_STYLE = {
   'Pending':          { bg: '#FFFBEB', color: '#D97706', dot: '#D97706' },
@@ -30,9 +40,15 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  const [publicComplaints, setPublicComplaints] = useState([]);
+
   useEffect(() => {
-    axios.get('http://localhost:8000/api/users/my-complaints')
+    axios.get('http://localhost:8000/api/users/my-complaints', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }})
       .then(r => setComplaints(r.data))
+      .catch(console.error);
+
+    axios.get('http://localhost:8000/api/public/complaints')
+      .then(r => setPublicComplaints(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -41,6 +57,9 @@ export default function UserDashboard() {
   const pending = complaints.filter(c => c.status === 'Pending').length;
   const resolved = complaints.filter(c => c.status === 'Resolved').length;
   const verified = complaints.filter(c => c.status === 'Verified').length;
+
+  const publicResolved = publicComplaints.filter(c => c.status === 'Resolved').length;
+  const publicTotal = publicComplaints.length;
 
   if (loading) return <div className="text-secondary" style={{ padding: 40, textAlign: 'center' }}>Loading your reports...</div>;
 
@@ -59,8 +78,51 @@ export default function UserDashboard() {
         <div style={{ fontSize: 80, opacity: 0.1, fontWeight: 900, letterSpacing: -4 }}>IS</div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-4 mb-6" style={{ marginBottom: 24 }}>
+      <div className="grid grid-2 mb-6" style={{ gap: 24 }}>
+         {/* Live Public Analytics */}
+         <div className="card" style={{ padding: 20 }}>
+            <h3 className="font-semibold text-lg mb-4 text-purple-700">Live Public Dashboard</h3>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <div style={{ fontSize: 32, fontWeight: 800 }}>{publicResolved}</div>
+                <div className="text-secondary text-sm">Total Incidents Resolved Statewide</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#D97706' }}>{publicTotal - publicResolved}</div>
+                <div className="text-secondary text-sm">Active Issues</div>
+              </div>
+            </div>
+            
+            <div style={{ height: 300, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              <MapContainer center={[18.5204, 73.8567]} zoom={6} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='© OpenStreetMap' />
+                {publicComplaints.filter(c => c.latitude).map(c => (
+                  <Marker key={c.id} position={[c.latitude, c.longitude]} icon={L.divIcon({
+                    className: 'custom-incident-marker',
+                    html: `<div style="background-color: ${PRIORITY_COLOR[c.priority_level] || '#2563EB'}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.4);"></div>`,
+                    iconSize: [14, 14], iconAnchor: [7, 7]
+                  })}>
+                    <Popup>
+                      <div style={{ minWidth: 180 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: PRIORITY_COLOR[c.priority_level] }}>
+                          {c.priority_level} Priority Incident
+                        </div>
+                        <div style={{ fontSize: 12, margin: '4px 0' }}>{c.location_name || 'No address'}</div>
+                        <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid #E5E7EB' }} />
+                        <div style={{ fontSize: 13, marginBottom: 4 }}>Status: <StatusBadge status={c.status} /></div>
+                        <div style={{ fontSize: 11, color: '#666' }}>Reported: {new Date(c.created_at).toLocaleDateString()}</div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+         </div>
+
+         {/* Stats Row */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+           <h3 className="font-semibold text-lg text-gray-800" style={{ paddingLeft: 4 }}>My Statistics</h3>
+           <div className="grid grid-2" style={{ gap: 16 }}>
         {[
           { label: 'Total Reports', value: total, icon: <FileText size={18} />, bg: '#F3F4F6', color: '#111827' },
           { label: 'Pending', value: pending, icon: <Clock size={18} />, bg: '#FFFBEB', color: '#D97706' },
@@ -75,6 +137,17 @@ export default function UserDashboard() {
             <div className="stat-value">{value}</div>
           </div>
         ))}
+           </div>
+         </div>
+      </div>
+
+      {/* Area Scan Demo Link */}
+      <div className="card mb-6 flex justify-between items-center" style={{ background: 'linear-gradient(135deg, #E0E7FF 0%, #EDE9FE 100%)', border: '1px solid #C7D2FE' }}>
+         <div>
+           <h3 className="font-semibold text-lg" style={{ color: '#4338CA' }}>Infrastructure Area Scan Demo</h3>
+           <p className="text-secondary text-sm">Deploy automated drone fleets for comprehensive area inspections.</p>
+         </div>
+         <Link to="/area-scan" className="btn" style={{ background: '#4F46E5', color: 'white' }}>Launch Scan UI</Link>
       </div>
 
       {/* Reports List */}

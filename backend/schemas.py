@@ -21,7 +21,7 @@ class User(UserBase):
     is_admin: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ImageVerificationBase(BaseModel):
     image_hash: str
@@ -36,7 +36,7 @@ class ImageVerification(ImageVerificationBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ComplaintBase(BaseModel):
     description: Optional[str] = None
@@ -59,4 +59,5 @@ class Complaint(ComplaintBase):
     verifications: List[ImageVerification] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+

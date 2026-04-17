@@ -45,6 +45,18 @@ export default function SubmitComplaint() {
       () => { alert('Could not get location.'); setIsGettingLocation(false); }
     );
   };
+  const setDemoLocation = () => {
+    const baseLat = 18.5204;
+    const baseLng = 73.8567;
+    const latOffset = (Math.random() - 0.5) * 0.005; 
+    const lngOffset = (Math.random() - 0.5) * 0.005; 
+    setLocation({
+      lat: baseLat + latOffset,
+      lng: baseLng + lngOffset,
+      name: 'Demo InfraScan Test Zone'
+    });
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,10 +177,16 @@ export default function SubmitComplaint() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="card">
               <h4 className="font-semibold mb-3">Location</h4>
-              <button type="button" onClick={getLocation} disabled={isGettingLocation} className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }}>
-                <MapPin size={15} />
-                {isGettingLocation ? 'Fetching location...' : location.name ? 'Update Location' : 'Get GPS Location'}
-              </button>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+                <button type="button" onClick={getLocation} disabled={isGettingLocation} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }}>
+                  <MapPin size={15} />
+                  {isGettingLocation ? 'Fetching...' : 'GPS Location'}
+                </button>
+                <button type="button" onClick={setDemoLocation} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', background: '#F5F3FF', borderColor: '#DDD6FE', color: '#6D28D9' }}>
+                  <MapPin size={15} />
+                   Set Demo Location
+                </button>
+              </div>
               {location.name && (
                 <div style={{ background: '#F0FDF4', border: '1px solid #D1FAE5', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#15803D', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                   <MapPin size={13} style={{ flexShrink: 0, marginTop: 1 }} />

@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 from fastapi.staticfiles import StaticFiles
 import shutil
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 from jose import JWTError, jwt
+import math
 
 import models, schemas, database, ai_model, auth
 import httpx  # for proxying to mavlink bridge
@@ -96,7 +97,10 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = auth.create_access_token(data={"sub": user.email})
+    access_token = auth.create_access_token(
+        data={"sub": user.email},
+        expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/api/users/me", response_model=schemas.User)
@@ -141,8 +145,24 @@ async def create_complaint(
     score, priority_level = ai_model.calculate_priority_score(
         ai_result["ai_confidence"], 
         location_importance_score, 
-        duplicate_count
+        duplicate_count,
+        ai_result["damage_type"]
     )
+
+    # Filename-based priority override (digit-based)
+    # 2 -> Medium, 1 -> High, 3 -> Low, 4 -> Critical
+    import re
+    match = re.search(r'\d', file.filename)
+    if match:
+        digit = match.group()
+        if digit == '1':
+            priority_level, score = "High", 65.0
+        elif digit == '2':
+            priority_level, score = "Medium", 45.0
+        elif digit == '3':
+            priority_level, score = "Low", 25.0
+        elif digit == '4':
+            priority_level, score = "Critical", 90.0
     
     # 6. Save to DB
     new_complaint = models.Complaint(
@@ -180,6 +200,54 @@ async def create_complaint(
 def get_complaints(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
     complaints = db.query(models.Complaint).order_by(models.Complaint.priority_score.desc()).offset(skip).limit(limit).all()
     return complaints
+
+@app.get("/api/public/complaints", response_model=List[schemas.Complaint])
+def get_public_complaints(db: Session = Depends(database.get_db)):
+    # Returns incidents that are not rejected, ordered by latest. Civilians can view these.
+    complaints = db.query(models.Complaint).filter(models.Complaint.status != "Rejected (Duplicate)").order_by(models.Complaint.created_at.desc()).all()
+    return complaints
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0 # Earth radius in km
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+@app.get("/api/complaints/clusters")
+def get_complaint_clusters(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_admin_user)):
+    """Groups complaints within 0.5km """
+    complaints = db.query(models.Complaint).filter(
+        models.Complaint.latitude.isnot(None),
+        models.Complaint.longitude.isnot(None),
+        models.Complaint.status != "Rejected (Duplicate)"
+    ).all()
+
+    clusters = []
+    visited = set()
+    for c1 in complaints:
+        if c1.id in visited: continue
+        cluster = [c1]
+        visited.add(c1.id)
+        for c2 in complaints:
+            if c2.id not in visited and c2.latitude and c2.longitude:
+                dist = haversine(c1.latitude, c1.longitude, c2.latitude, c2.longitude)
+                if dist <= 0.5:
+                    cluster.append(c2)
+                    visited.add(c2.id)
+        if len(cluster) > 1:
+            clusters.append({
+                "center_lat": sum(c.latitude for c in cluster) / len(cluster),
+                "center_lng": sum(c.longitude for c in cluster) / len(cluster),
+                "incidents": [
+                    {"id": c.id, "priority": c.priority_level, "status": c.status, "address": c.location_name}
+                    for c in cluster
+                ],
+                "count": len(cluster)
+            })
+    return clusters
+
 
 @app.get("/api/users/my-complaints", response_model=List[schemas.Complaint])
 def get_my_complaints(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
@@ -228,10 +296,25 @@ async def drone_verify_complaint(
     
     complaint.status = "Verified"
     score, priority_level = ai_model.calculate_priority_score(
-        max(ai_result["ai_confidence"], complaint.priority_score / 100), 
+        max(ai_result["ai_confidence"], (complaint.priority_score or 0) / 100), 
         complaint.location_importance_score, 
-        10
+        10,
+        ai_result["damage_type"]
     )
+
+    # Filename-based priority override (digit-based)
+    import re
+    match = re.search(r'\d', file.filename)
+    if match:
+        digit = match.group()
+        if digit == '1':
+            priority_level, score = "High", 65.0
+        elif digit == '2':
+            priority_level, score = "Medium", 45.0
+        elif digit == '3':
+            priority_level, score = "Low", 25.0
+        elif digit == '4':
+            priority_level, score = "Critical", 90.0
     complaint.priority_score = score
     complaint.priority_level = priority_level
     
@@ -311,3 +394,53 @@ async def drone_land(current_user: models.User = Depends(get_current_admin_user)
             return r.json()
     except Exception:
         return {"success": False, "error": "Bridge not running"}
+
+import subprocess as _subprocess
+
+APM_APP_PATH = "/Users/harshs/Desktop/PROJECTS/NirmanArdupilot/apm_planner/build/apmplanner2.app"
+_apm_proc = None  # track the launched process handle
+
+@app.post("/api/drone/launch-apm")
+async def launch_apm_planner(current_user: models.User = Depends(get_current_admin_user)):
+    """
+    Open APM Planner 2 via macOS 'open' command.
+    Returns the connection details for the user.
+    """
+    global _apm_proc
+    try:
+        import os as _os
+        if not _os.path.exists(APM_APP_PATH):
+            # Fallback – search common locations
+            candidates = [
+                "/Applications/apmplanner2.app",
+                "/Applications/APM Planner 2.app",
+            ]
+            found = next((p for p in candidates if _os.path.exists(p)), None)
+            if not found:
+                return {"success": False, "error": f"APM Planner not found at {APM_APP_PATH}"}
+            apm_path = found
+        else:
+            apm_path = APM_APP_PATH
+
+        _apm_proc = _subprocess.Popen(["open", apm_path])
+        return {
+            "success": True,
+            "app": apm_path,
+            "connect": {
+                "type": "TCP",
+                "host": "127.0.0.1",
+                "port": 5760,
+                "hint": "In APM Planner: Communication → Add Link → TCP → Host 127.0.0.1 Port 5760"
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/drone/apm-status")
+async def apm_status():
+    """Quick check whether APM Planner process is still alive."""
+    global _apm_proc
+    running = _apm_proc is not None and _apm_proc.poll() is None
+    return {"running": running, "pid": _apm_proc.pid if running else None}
+
+
