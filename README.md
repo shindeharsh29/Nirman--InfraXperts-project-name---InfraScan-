@@ -1,30 +1,29 @@
-# 🛡️ InfraScan — AI Infrastructure Damage Detection System
+# InfraScan — AI Infrastructure Damage Detection System
 
 > An AI-powered full-stack platform for citizen reporting, automated damage detection, priority scoring, and drone-based field verification of infrastructure damage.
 
-![InfraScan](https://img.shields.io/badge/AI--Powered-Roboflow-blue) ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-green) ![React](https://img.shields.io/badge/Frontend-React%2018-61DAFB) ![GCS](https://img.shields.io/badge/GCS-APM%20Planner%202-red)
 
 ---
 
-## 🌟 Core Features
+##  Core Features
 
 | Feature | Description |
 |:--- |:--- |
-| 📸 **Unified Auth** | Modern sliding Authentication page for seamless Login & Signup. |
-| 🤖 **2500+ Image Trained AI** | AI models trained on a massive dataset of 2500+ infrastructure images in **Roboflow**. |
-| ⚖️ **Priority Scoring** | Automatically calculates an infrastructure priority score based on damage severity and location. |
-| 🚁 **Drone Dispatch** | One-click dispatch to **APM Planner 2** for real-time field verification. |
-| 🗺️ **Live HUD Map** | Real-time drone telemetry (Alt, Speed, Mode) displayed over an incident map. |
+| **Unified Auth** | Modern sliding Authentication page for seamless Login & Signup. |
+| **2500+ Image Trained AI** | AI models trained on a massive dataset of 2500+ infrastructure images in **Roboflow**. |
+| **Priority Scoring** | Automatically calculates an infrastructure priority score based on damage severity and location. |
+| **Drone Dispatch** | One-click dispatch to **APM Planner 2** for real-time field verification. |
+| **Live HUD Map** | Real-time drone telemetry (Alt, Speed, Mode) displayed over an incident map. |
 
 ---
 
-## 🚀 Quick Start (Automated Demo)
+##  Quick Start (Automated Demo)
 
 The easiest way to run InfraScan is to use the included demo script which automates all dependency installations and service startups.
 
 ### 1. Clone & Launch
 ```bash
-git clone https://github.com/Utkarshc8619/InfraScan.git
+git clone repolink
 cd InfraScan
 chmod +x start_demo.sh
 ./start_demo.sh
@@ -36,7 +35,7 @@ chmod +x start_demo.sh
 
 ---
 
-## 🚁 Ground Control & Dispatch
+## Ground Control & Dispatch
 
 InfraScan integrates directly with **APM Planner 2** for aerial verification.
 
@@ -66,22 +65,12 @@ InfraScan/
 
 ---
 
-## 🤝 Open Source Components
+## Open Source Components
 - **FastAPI**: High-performance backend.
 - **React**: Modern reactive frontend.
 - **ArduPilot SITL**: Drone simulation environment.
 - **APM Planner 2**: Open Source mission monitoring.
 
-Built with ❤️ for Infrastructure Safety.
-Commit your changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
