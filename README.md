@@ -72,6 +72,4 @@ InfraScan/
 - **APM Planner 2**: Open Source mission monitoring.
 
 
----
-
-Built with ❤️ by [Utkarsh](https://github.com/Utkarshc8619)
+---Team InfraXperts
